@@ -3,9 +3,15 @@ import session from 'express-session'
 import api from './api'
 import cry from 'crypto'
 import helmet from 'helmet'
+import cookies from 'cookie-parser'
+import {JsonDB, FindCallback} from 'node-json-db'
+import { Config, JsonDBConfig } from 'node-json-db/dist/lib/JsonDBConfig'
 
 const app = express()
 const store = new session.MemoryStore()
+const pdb = new JsonDB(new Config('db',true,false))
+
+new api.ApiInit(pdb)
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -15,8 +21,13 @@ saveUninitialized:false,
 resave:false,
 store}))
 app.use(helmet())
+app.use(cookies())
 
-app.use('/api',api)
+setInterval(() =>{
+    pdb.reload()
+},1800000)
+
+app.use('/api',api.r)
 
 app.get('/',(req,res)=>{
     return res.send('hi')

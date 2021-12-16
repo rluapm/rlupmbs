@@ -1,10 +1,15 @@
 import express from 'express'
 import {JsonDB, FindCallback} from 'node-json-db'
-import { Config } from 'node-json-db/dist/lib/JsonDBConfig'
 import cry from 'crypto'
 
-const pdb = new JsonDB(new Config('db',true,false))
+let pdb:JsonDB
 const r = express.Router()
+
+class ApiInit {
+    constructor(db: JsonDB){
+        pdb = db
+    }
+}
 
 interface PackageRecv {
     name: string;
@@ -32,15 +37,13 @@ r.get('/packages/:id/source', async (req, res) =>{
 
 r.post('/packages', async (req, res) => {
     // @ts-ignore
-    let {auth} = req.session
-    if (!auth) return res.status(403).send({code:403, message:'Not logged in.'})
+    let cookies = req.cookies
+    if (!(cookies.auth)) return res.status(403).send({code:403, message:'Not logged in.'})
     let user
 
-    pdb.find(`/users/${auth}`,((entry, index)=>{
-        user = entry.username
-    }) as FindCallback)
+    user = pdb.getData(`/users/${cookies.auth}`).username
 
-    if (!user) return res.status(403).send({code:403, message:'You are not signed in or logged in.'})
+    if (!user) return res.status(403).send({code:403, message:'You are not signed up or logged in.'})
 
     let body = req.body
     if (body.package) {
@@ -51,12 +54,15 @@ r.post('/packages', async (req, res) => {
             name: pck.name,
             version: pck.version,
             tags: pck.tags ? pck.tags : undefined,
-            readme: pck.readme ? pck.readme : undefined
+            readme: pck.readme ? pck.readme : undefined,
+            author:user
         })
         pdb.push(`/packages/${pdb.getData('/pcknum')+1}/source`,pck.source)
     }
 
-    return res.send(pdb.getData(`/packages/${pdb.getData('/pcknum')+1}`))
+    res.send(pdb.getData(`/packages/${pdb.getData('/pcknum')+1}`))
+    pdb.push(`/pcknum`,pdb.getData('/pcknum')+1)
+    return true
 })
 
 r.post('/users/signup', (req, res) => {
@@ -69,4 +75,18 @@ r.post('/users/signup', (req, res) => {
     return res.send({success: true, message:'Successfully signed in!',session:req.session})
 })
 
-export default r
+r.post('/users/login', (req, res) => {
+    if (!(req.body.password) || !(req.body.username)) return res.status(406).send({code:406,message:'Cannot find the required fields.'})
+    let authhash = cry.createHash('sha256').update(req.body.password+req.body.username).digest('hex')
+    let user
+    try{
+        user = pdb.getData(`/users/${authhash}`)
+    } catch (err){
+        return res.status(401).send({code:401,message:'Invalid user credentials'})
+    }
+    //@ts-ignore
+    req.session.auth = authhash
+    return res.send({success: true, message:'Successfully logged in!',session:req.session})
+})
+
+export default {r, ApiInit}
