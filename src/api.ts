@@ -19,18 +19,94 @@ interface PackageRecv {
     readme?: string;
 }
 
+r.get('/packages/search',async (req, res)=>{
+    let q = req.query.q
+    if (!q) return res.status(406).send({code:406,message:"No query provided."})
+
+    let filtereddata = []
+    for (const pckid in pdb.getData('/packages')) {
+        let pck = pdb.getData(`/packages/${pckid}/info`)
+        if (pck.name.includes(q)) {
+            filtereddata.push(pck)
+        }
+    }
+
+    return res.send(filtereddata)
+})
+
 r.get('/packages/:id', async (req, res) => {
+    let pckid = req.params.id
+    let pck 
+    try {
+        pck = await pdb.getData(`/packages/${pckid}/info`)
+    } catch (err){
+        return res.status(404).send('Unable to find package')
+    }
+    return res.send(pck)
+})
+
+r.post('/packages/:id/remove', async (req, res) => {
+    // @ts-ignore
+    let cookies = req.cookies
+    if (!(cookies.auth)) return res.status(403).send({code:403, message:'Not logged in.'})
+    let user = pdb.getData(`/users/${cookies.auth}`).username
+    if (!user) return res.status(403).send({code:403, message:'You are not signed up or logged in.'})
+
     let pckid = req.params.id
     let pck = await pdb.getData(`/packages/${pckid}/info`)
     if (!pck) return res.status(404).send('Unable to find package')
 
-    return res.send(pck)
+    if (pck.author === user) {
+        pdb.delete(`/packages/${pckid}`)
+        return res.send({code:200, message:"Package successfully removed."})
+    } else {
+        return res.status(403).send({code:403, message:"Unauthorized."})
+    }
+})
+
+r.post('/packages/:id/update', async (req, res) =>{
+    // @ts-ignore
+    let cookies = req.cookies
+    if (!(cookies.auth)) return res.status(403).send({code:403, message:'Not logged in.'})
+    let user = pdb.getData(`/users/${cookies.auth}`).username
+    if (!user) return res.status(403).send({code:403, message:'You are not signed up or logged in.'})
+
+    let pckid = req.params.id
+    let pck = await pdb.getData(`/packages/${pckid}/info`)
+    if (!pck) return res.status(404).send('Unable to find package')
+
+    if (pck.author === user) {
+        let body = req.body
+        if (body.package) {
+            let pck = body.package
+            if (!(pck.version) || !(pck.name) || !(pck.source)) return res.status(406).send({ code: 406,message:'Cannot find the required fields.' })
+            pdb.push(`/packages/${pckid}/info`,{
+                id: pckid,
+                name: pdb.getData(`/packages/${pckid}/info/name`),
+                version: pck.version ? pck.version : undefined,
+                tags: pck.tags ? pck.tags : undefined,
+                readme: pck.readme ? pck.readme : undefined,
+                author:user,
+                downloads:pdb.getData(`/packages/${pckid}/info/downloads`)
+            })
+            pdb.push(`/packages/${pckid}/source`,pck.source ? pck.source : pdb.getData(`/packages/${pckid}/source`))
+        }
+        return res.send({code:200, message:"Package successfully updated."})
+    } else {
+        return res.status(403).send({code:403, message:"Unauthorized."})
+    }
 })
 
 r.get('/packages/:id/source', async (req, res) =>{
     let pckid = req.params.id
-    let pck = await pdb.getData(`/packages/${pckid}/source`)
-    if (!pck) return res.status(404).send('Unable to find package')
+    let pck 
+    try {
+        pck = await pdb.getData(`/packages/${pckid}/source`)
+    } catch (err){
+        return res.status(404).send('Unable to find package')
+    }
+
+    pdb.push(`/packages/${pckid}/info/downloads`, pdb.getData(`/packages/${pckid}/info/downloads`)+1)
 
     return res.send(pck)
 })
@@ -40,9 +116,7 @@ r.post('/packages', async (req, res) => {
     let cookies = req.cookies
     if (!(cookies.auth)) return res.status(403).send({code:403, message:'Not logged in.'})
     let user
-
     user = pdb.getData(`/users/${cookies.auth}`).username
-
     if (!user) return res.status(403).send({code:403, message:'You are not signed up or logged in.'})
 
     let body = req.body
@@ -55,7 +129,8 @@ r.post('/packages', async (req, res) => {
             version: pck.version,
             tags: pck.tags ? pck.tags : undefined,
             readme: pck.readme ? pck.readme : undefined,
-            author:user
+            author:user,
+            downloads:0
         })
         pdb.push(`/packages/${pdb.getData('/pcknum')+1}/source`,pck.source)
     }
