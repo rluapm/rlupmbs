@@ -33,6 +33,6 @@ app.get('/',(req,res)=>{
     return res.send('hi')
 })
 
-app.listen(8081,()=> {
+app.listen(process.env.PORT || 80,()=> {
 console.log('listening on port 8081')
 })
