@@ -4,7 +4,7 @@
   "description": "Backend for lupm.xyz",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "nodemon src/index.ts --config nodemon.json"
+    "start": "ts-node src/index.ts"
   },
   "repository": {
     "type": "git",
