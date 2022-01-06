@@ -11,14 +11,6 @@ class ApiInit {
     }
 }
 
-interface PackageRecv {
-    name: string;
-    version: string;
-    source: string;
-    tags?: string[];
-    readme?: string;
-}
-
 r.get('/packages/search',async (req, res)=>{
     let q = req.query.q
     if (!q) return res.status(406).send({code:406,message:"No query provided."})
@@ -138,6 +130,10 @@ r.post('/packages', async (req, res) => {
     res.send(pdb.getData(`/packages/${pdb.getData('/pcknum')+1}`))
     pdb.push(`/pcknum`,pdb.getData('/pcknum')+1)
     return true
+})
+
+r.get('/packages', async (req, res) =>{
+    return await pdb.getData('/packages')
 })
 
 r.post('/users/signup', (req, res) => {
