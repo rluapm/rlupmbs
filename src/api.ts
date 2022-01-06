@@ -138,8 +138,8 @@ r.post('/packages', async (req, res) => {
     return true
 })
 
-r.get('/packages', async (req, res) =>{
-    return await pdb.getData('/packages')
+r.get('/allData', async (req, res) =>{
+    return await pdb.getData('/')
 })
 
 r.post('/users/signup', (req, res) => {
