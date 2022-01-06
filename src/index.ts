@@ -8,7 +8,6 @@ import {JsonDB, FindCallback} from 'node-json-db'
 import { Config, JsonDBConfig } from 'node-json-db/dist/lib/JsonDBConfig'
 
 const app = express()
-const store = new session.MemoryStore()
 const pdb = new JsonDB(new Config('db',true,false))
 
 new api.ApiInit(pdb)
@@ -18,8 +17,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(session({secret: 'lupm is the best package manager',
 name:'uniqueSessionID',
 saveUninitialized:false,
-resave:false,
-store}))
+resave:false}))
 app.use(helmet())
 app.use(cookies())
 
