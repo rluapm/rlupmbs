@@ -139,7 +139,7 @@ r.post('/packages', async (req, res) => {
 })
 
 r.get('/allData', async (req, res) =>{
-    return await pdb.getData('/')
+    return await res.send(await pdb.getData('/'))
 })
 
 r.post('/users/signup', (req, res) => {
