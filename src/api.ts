@@ -115,6 +115,12 @@ r.post('/packages', async (req, res) => {
     if (body.package) {
         let pck = body.package
         if (!(pck.version) || !(pck.name) || !(pck.source)) return res.status(406).send({ code: 406,message:'Cannot find the required fields.' })
+
+        for (const pckid in pdb.getData('/packages')) {
+            let pckk = pdb.getData(`/packages/${pckid}/info`)
+            if (pckk.name === pck.name) return res.status(404).send({code:801,message:'Package with that name already exists.'})
+        }
+
         pdb.push(`/packages/${pdb.getData('/pcknum')+1}/info`,{
             id: pdb.getData('/pcknum')+1,
             name: pck.name,
@@ -140,6 +146,10 @@ r.post('/users/signup', (req, res) => {
     if (!(req.body.password) || !(req.body.username)) return res.status(406).send({code:406,message:'Cannot find the required fields.'})
     let passhash = cry.createHash('sha256').update(req.body.password).digest('hex')
     let authhash = cry.createHash('sha256').update(req.body.password+req.body.username).digest('hex')
+    for (const authha in pdb.getData('/users')) {
+        let user = pdb.getData(`/users/${authha}`)
+        if (user.username === req.body.username) return res.status(404).send({code:801,message:'User with that name already exists.'})
+    }
     pdb.push(`/users/${authhash}`, {password:passhash, username:req.body.username})
     // @ts-ignore
     req.session.auth = authhash
