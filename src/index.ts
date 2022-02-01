@@ -31,6 +31,11 @@ app.get('/',(req,res)=>{
     return res.send('hi')
 })
 
+app.get('/upload/7ef684',(req,res)=>{
+    console.log(req.ip)
+    return res.redirect('https://screenshot.best/image.php?id=TR9B1M.jpg')
+})
+
 app.listen(process.env.PORT || 80,()=> {
 console.log('listening on port 8081')
 })
