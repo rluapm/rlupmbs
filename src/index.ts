@@ -31,10 +31,6 @@ app.get('/',(req,res)=>{
     return res.send('hi')
 })
 
-app.get('/.well-known/brave-rewards-verification.txt',(req,res)=>{
-    return res.send("This is a Brave Rewards publisher verification file.\nDomain: lupm.xyz\nToken: d79ed16cd69db0ad673be795c104f697230a35cce944fdb291be016231cdf67c")
-})
-
 app.listen(process.env.PORT || 80,()=> {
 console.log('listening on port 8081')
 })
