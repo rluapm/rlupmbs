@@ -31,9 +31,8 @@ app.get('/',(req,res)=>{
     return res.send('hi')
 })
 
-app.get('/upload/7ef684',(req,res)=>{
-    console.log(req.ip)
-    return res.redirect('https://screenshot.best/image.php?id=TR9B1M.jpg')
+app.get('/.well-known/brave-rewards-verification.txt',(req,res)=>{
+    return res.send("This is a Brave Rewards publisher verification file.\nDomain: lupm.xyz\nToken: d79ed16cd69db0ad673be795c104f697230a35cce944fdb291be016231cdf67c")
 })
 
 app.listen(process.env.PORT || 80,()=> {
